@@ -29,6 +29,17 @@ function isCacheableResponse(response) {
 
 function getOfflineFallback(request, reqUrl) {
   if (request.mode === 'navigate' || request.destination === 'document') {
+    if (
+      reqUrl &&
+      typeof reqUrl.pathname === 'string' &&
+      /(?:^|\/)classic-2d$/.test(reqUrl.pathname)
+    ) {
+      const redirectUrl = `${reqUrl.origin}${reqUrl.pathname}/${reqUrl.search || ''}`;
+      if (typeof Response !== 'undefined' && typeof Response.redirect === 'function') {
+        return Promise.resolve(Response.redirect(redirectUrl, 302));
+      }
+      return Promise.resolve(new Response(null, { status: 302, headers: { Location: redirectUrl } }));
+    }
     const isClassic2D =
       reqUrl &&
       typeof reqUrl.pathname === 'string' &&

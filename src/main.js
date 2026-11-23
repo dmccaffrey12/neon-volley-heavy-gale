@@ -252,6 +252,8 @@ export function initApp(overrides = {}) {
   let drawerOpen = false;
   let wakeLockSentinel = null;
   let wakeLockRequested = false;
+  let wakeLockRequestSeq = 0;
+  let wakeLockActiveSeq = 0;
   let lastCameraPunch = 0;
   let rafId = null;
   let lastFrameMs = null;
@@ -463,9 +465,19 @@ export function initApp(overrides = {}) {
     }
   }
 
-  // Screen Wake Lock (guarded, re-acquired on visibilitychange)
+  function releaseSentinelSafely(sentinel) {
+    if (sentinel && typeof sentinel.release === 'function') {
+      try {
+        Promise.resolve(sentinel.release()).catch(() => {});
+      } catch {
+        // Ignore release errors
+      }
+    }
+  }
+
+  // Screen Wake Lock (guarded, superseded-sentinel-safe, re-acquired on visibilitychange)
   async function requestWakeLock() {
-    if (destroyed) {
+    if (destroyed || wakeLockSentinel) {
       return;
     }
     wakeLockRequested = true;
@@ -475,19 +487,18 @@ export function initApp(overrides = {}) {
     if (doc.visibilityState === 'hidden') {
       return;
     }
+    const seq = ++wakeLockRequestSeq;
     try {
       const sentinel = await nav.wakeLock.request('screen');
-      if (destroyed) {
-        if (sentinel && typeof sentinel.release === 'function') {
-          try {
-            Promise.resolve(sentinel.release()).catch(() => {});
-          } catch {
-            // Ignore release errors
-          }
-        }
+      if (destroyed || seq < wakeLockActiveSeq) {
+        releaseSentinelSafely(sentinel);
         return;
       }
+      if (wakeLockSentinel && wakeLockSentinel !== sentinel) {
+        releaseSentinelSafely(wakeLockSentinel);
+      }
       wakeLockSentinel = sentinel;
+      wakeLockActiveSeq = seq;
       if (sentinel && typeof sentinel.addEventListener === 'function') {
         sentinel.addEventListener('release', () => {
           if (wakeLockSentinel === sentinel) {

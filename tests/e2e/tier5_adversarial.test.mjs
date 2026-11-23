@@ -1504,7 +1504,7 @@ describe('T5-11 — sw.js async waitUntil chaining, 206/500/Range bypass & /clas
       match: async (req) => {
         const key = normalizeKey(req);
         for (const bucket of cacheMap.values()) {
-          if (bucket.has(key)) return bucket.get(key);
+          if (bucket.has(key)) return bucket.get(key).clone();
         }
         return undefined;
       },
@@ -1585,7 +1585,7 @@ describe('T5-11 — sw.js async waitUntil chaining, 206/500/Range bypass & /clas
     assert.equal(await bucket.get('./src/physics3d.js').text(), 'fresh-v2');
   });
 
-  it('never caches HTTP 206/500 responses, bypasses Range requests, and serves /classic-2d offline without trailing slash', async () => {
+  it('never caches HTTP 206/500 responses, bypasses Range requests, and redirects offline /classic-2d to /classic-2d/', async () => {
     let nextStatus = 206;
     let offline = false;
     const sb = createDelayedSwSandbox({
@@ -1646,9 +1646,10 @@ describe('T5-11 — sw.js async waitUntil chaining, 206/500/Range bypass & /clas
     });
     assert.equal(rangeIntercepted, false, 'Range requests must bypass SW caching');
 
-    // 4. Offline navigation to /classic-2d (no trailing slash) must serve ./classic-2d/index.html
+    // 4. Offline navigation to /classic-2d (no trailing slash) must return 302 -> /classic-2d/
+    //    so relative subresources (./game.js, ./manifest.json) resolve under /classic-2d/.
     offline = true;
-    let classicNoSlashResp = null;
+    let classicNoSlashRespPromise = null;
     sb.listeners.get('fetch')({
       request: {
         method: 'GET',
@@ -1658,14 +1659,78 @@ describe('T5-11 — sw.js async waitUntil chaining, 206/500/Range bypass & /clas
         headers: new Headers(),
       },
       respondWith: (p) => {
-        classicNoSlashResp = p;
+        classicNoSlashRespPromise = p;
       },
       waitUntil: () => {},
     });
+    const classicNoSlashResp = await classicNoSlashRespPromise;
+    assert.equal(classicNoSlashResp.status, 302, 'Offline /classic-2d (no trailing slash) must return 302 redirect');
+    const redirectLocation = classicNoSlashResp.headers.get('location');
+    assert.ok(
+      typeof redirectLocation === 'string' && redirectLocation.endsWith('/classic-2d/'),
+      `Redirect Location must end with /classic-2d/ (got ${redirectLocation})`,
+    );
+
+    // 4b. Following that redirect offline returns ./classic-2d/ (200) and resolves ./game.js -> ./classic-2d/game.js (200)
+    let followedDocPromise = null;
+    sb.listeners.get('fetch')({
+      request: {
+        method: 'GET',
+        mode: 'navigate',
+        destination: 'document',
+        url: redirectLocation,
+        headers: new Headers(),
+      },
+      respondWith: (p) => {
+        followedDocPromise = p;
+      },
+      waitUntil: () => {},
+    });
+    const followedDoc = await followedDocPromise;
+    assert.equal(followedDoc.status, 200);
+    assert.equal(await followedDoc.text(), 'precached:./classic-2d/');
+
+    const resolvedGameJsUrl = new URL('./game.js', redirectLocation).href;
+    assert.equal(resolvedGameJsUrl, 'http://127.0.0.1:8080/classic-2d/game.js');
+    let gameJsRespPromise = null;
+    sb.listeners.get('fetch')({
+      request: {
+        method: 'GET',
+        mode: 'no-cors',
+        destination: 'script',
+        url: resolvedGameJsUrl,
+        headers: new Headers(),
+      },
+      respondWith: (p) => {
+        gameJsRespPromise = p;
+      },
+      waitUntil: () => {},
+    });
+    const gameJsResp = await gameJsRespPromise;
+    assert.equal(gameJsResp.status, 200, 'Resolved ./classic-2d/game.js must be served 200 from Cache Storage');
+    assert.equal(await gameJsResp.text(), 'precached:./classic-2d/game.js');
+
+    // 4c. Offline uncached navigation inside /classic-2d/* falls back cleanly to ./classic-2d/index.html (200)
+    let classicDeepRespPromise = null;
+    sb.listeners.get('fetch')({
+      request: {
+        method: 'GET',
+        mode: 'navigate',
+        destination: 'document',
+        url: 'http://127.0.0.1:8080/classic-2d/subroute',
+        headers: new Headers(),
+      },
+      respondWith: (p) => {
+        classicDeepRespPromise = p;
+      },
+      waitUntil: () => {},
+    });
+    const classicDeepResp = await classicDeepRespPromise;
+    assert.equal(classicDeepResp.status, 200);
     assert.equal(
-      await (await classicNoSlashResp).text(),
+      await classicDeepResp.text(),
       'precached:./classic-2d/index.html',
-      'Offline /classic-2d (no trailing slash) must fall back to Classic 2D index.html',
+      'Offline /classic-2d/* fallback must return ./classic-2d/index.html',
     );
   });
 });
@@ -1895,6 +1960,79 @@ describe('T5-14 — Async Wake Lock sentinel cleanup across destroy() & visibili
     assert.equal(requestCalls, 2, 'Wake Lock must re-acquire cleanly on visibilitychange after release');
 
     app.destroy();
+  });
+
+  it('releases superseded WakeLockSentinels cleanly across concurrent visibilitychange in both FIFO and LIFO settlement orders', async () => {
+    for (const order of ['fifo', 'lifo']) {
+      const host = createAppShellDomHost({ width: 1280, height: 720 });
+      const pendingResolvers = [];
+      const sentinelReleaseCounts = [];
+
+      const app = initApp({
+        window: host.win,
+        document: host.doc,
+        navigator: {
+          wakeLock: {
+            request: () => {
+              const idx = sentinelReleaseCounts.length;
+              sentinelReleaseCounts.push(0);
+              return new Promise((resolve) => {
+                pendingResolvers.push(() =>
+                  resolve({
+                    addEventListener() {},
+                    release: async () => {
+                      sentinelReleaseCounts[idx] += 1;
+                    },
+                  }),
+                );
+              });
+            },
+          },
+        },
+        storage: createMemoryStorage(),
+        createCourtScene: (canvas, opts) =>
+          createCourtScene(canvas, {
+            ...opts,
+            renderer: createHeadlessRendererStub(),
+            createCanvas: createHeadless2DCanvasFactory(),
+          }),
+      });
+
+      // Trigger first gesture and concurrent visibilitychange while request #1 is still in flight
+      host.win.dispatch('pointerdown');
+      host.doc.visibilityState = 'visible';
+      host.doc.dispatch('visibilitychange');
+
+      // Settle all pending promises in FIFO or LIFO order
+      const indices = pendingResolvers.map((_, i) => i);
+      if (order === 'lifo') indices.reverse();
+      for (const idx of indices) {
+        pendingResolvers[idx]();
+        await Promise.resolve();
+        await Promise.resolve();
+      }
+
+      // Once a sentinel is active, another visibilitychange must NOT issue a redundant request
+      const countBeforeExtraVis = sentinelReleaseCounts.length;
+      host.doc.dispatch('visibilitychange');
+      assert.equal(
+        sentinelReleaseCounts.length,
+        countBeforeExtraVis,
+        `Active sentinel must prevent redundant wakeLock requests (${order})`,
+      );
+
+      // Destroy app -> every sentinel ever created must have been released cleanly (zero leaks)
+      app.destroy();
+      await Promise.resolve();
+      await Promise.resolve();
+
+      assert.ok(sentinelReleaseCounts.length >= 1, `At least one sentinel must be requested (${order})`);
+      assert.deepStrictEqual(
+        sentinelReleaseCounts,
+        sentinelReleaseCounts.map(() => 1),
+        `Every sentinel must be released exactly once with zero leaked/orphaned sentinels (${order})`,
+      );
+    }
   });
 });
 
