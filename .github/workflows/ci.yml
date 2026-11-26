@@ -1,0 +1,81 @@
+name: CI — SUMMER HEAT 3D
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks-and-node-tests:
+    name: Syntax, Lint & Node Tests (Unit + E2E Tiers 1-3, 5)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Check ESM, Service Worker, Classic 2D & JSON syntax
+        run: |
+          for f in src/*.js; do
+            node --input-type=module --check < "$f"
+          done
+          node --check sw.js
+          node --check classic-2d/game.js
+          python3 -m json.tool manifest.json > /dev/null
+          python3 -m json.tool classic-2d/manifest.json > /dev/null
+
+      - name: Run zero-config ESLint
+        run: npx --yes eslint --no-config-lookup --rule 'no-undef: off' src/*.js sw.js
+
+      - name: Run Unit Tests
+        run: node --test tests/unit/*.test.mjs
+
+      - name: Run E2E Tiers 1, 2, 3 & 5
+        run: |
+          bash tests/e2e/run_all.sh --tier 1
+          bash tests/e2e/run_all.sh --tier 2
+          bash tests/e2e/run_all.sh --tier 3
+          bash tests/e2e/run_all.sh --tier 5
+
+  browser-e2e-qa:
+    name: Browser & Offline PWA QA (Tier 4 Playwright/SwiftShader)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Playwright & Pillow
+        run: |
+          python3 -m pip install --upgrade pip
+          pip install playwright Pillow
+          python3 -m playwright install --with-deps chromium
+
+      - name: Run Tier 4 Browser & Offline Cache QA
+        run: bash tests/e2e/run_all.sh --tier 4 --port 8080 --artifacts-dir ./qa-artifacts --skip-video
+
+      - name: Upload QA Screenshots & Summary
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: qa-artifacts-${{ github.run_id }}
+          path: qa-artifacts/
+          retention-days: 14
