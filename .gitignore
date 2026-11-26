@@ -1,0 +1,10 @@
+# Local agent & QA outputs
+.agents/
+qa-artifacts/
+
+# OS / Editor artifacts
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
