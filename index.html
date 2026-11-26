@@ -1,42 +1,49 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <meta name="theme-color" content="#090414" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <title>NEON VOLLEY: HEAVY GALE — 2P Synthwave Beach Ball PWA</title>
-  <link rel="manifest" href="./manifest.json" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#ff6a2b">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>SUMMER HEAT 3D — Arcade Beach Volleyball</title>
+  <link rel="manifest" href="./manifest.json">
   <style>
     :root {
-      --bg-deep: #090414;
-      --cyan: #00f3ff;
-      --magenta: #ff00aa;
-      --orange: #ff5500;
-      --gold: #ffe600;
-      --glass-bg: rgba(12, 6, 28, 0.78);
-      --glass-border: rgba(0, 243, 255, 0.35);
-      --font-mono: 'Consolas', 'SFMono-Regular', 'Menlo', 'Monaco', monospace;
-      --font-display: 'Segoe UI', 'Trebuchet MS', system-ui, -apple-system, sans-serif;
+      --bg-twilight: #120b24;
+      --glass-bg: rgba(18, 11, 36, 0.78);
+      --glass-strong: rgba(18, 11, 36, 0.92);
+      --glass-border: rgba(255, 179, 71, 0.32);
+      --sunset-coral: #ff6a2b;
+      --sunset-gold: #ffb347;
+      --ocean-cyan: #38e8ff;
+      --heat-pink: #ff2e88;
+      --text-main: #fff7eb;
+      --text-dim: #d2c1b0;
+      --font-ui: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
     }
 
-    * {
+    *, *::before, *::after {
       box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      user-select: none;
-      -webkit-user-select: none;
-      -webkit-touch-callout: none;
+    }
+
+    [hidden] {
+      display: none !important;
     }
 
     html, body {
-      width: 100vw;
-      height: 100vh;
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      max-width: 100vw;
       overflow: hidden;
-      background-color: var(--bg-deep);
-      color: #ffffff;
-      font-family: var(--font-display);
+      background: var(--bg-twilight);
+      color: var(--text-main);
+      font-family: var(--font-ui);
+      user-select: none;
+      -webkit-user-select: none;
       touch-action: none;
     }
 
@@ -46,502 +53,703 @@
       width: 100vw;
       height: 100vh;
       display: block;
+      touch-action: none;
       z-index: 1;
     }
 
-    /* Top Synthwave HUD Overlay */
+    /* Top HUD Overlay */
     #hudOverlay {
       position: fixed;
       top: 0;
       left: 0;
       right: 0;
-      z-index: 10;
+      width: 100%;
+      max-width: 100vw;
+      padding: 6px 10px 4px;
       display: flex;
+      flex-direction: column;
       align-items: center;
-      justify-content: space-between;
-      padding: 8px 14px;
+      gap: 5px;
       pointer-events: none;
-      gap: 8px;
+      z-index: 10;
     }
 
-    .hud-cluster {
+    .hud-row {
       display: flex;
       align-items: center;
-      gap: 8px;
-      pointer-events: auto;
-    }
-
-    /* Scoreboard Pill */
-    .score-card {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      background: var(--glass-bg);
-      border: 1px solid var(--glass-border);
-      border-radius: 999px;
-      padding: 4px 14px;
-      backdrop-filter: blur(8px);
-      box-shadow: 0 0 16px rgba(0, 243, 255, 0.2), inset 0 0 10px rgba(255, 0, 170, 0.12);
-    }
-
-    .score-side {
-      display: flex;
-      align-items: baseline;
+      justify-content: center;
+      width: 100%;
+      max-width: 100%;
       gap: 6px;
     }
 
-    .player-tag {
-      font-family: var(--font-mono);
-      font-size: 10px;
-      font-weight: 700;
-      letter-spacing: 0.1em;
+    .hud-row-top {
+      flex-wrap: nowrap;
+    }
+
+    .hud-row-controls {
+      flex-wrap: wrap;
+      pointer-events: none;
+    }
+
+    .hud-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+      pointer-events: auto;
+      white-space: nowrap;
+    }
+
+    /* Scoreboard + Heat + Wind */
+    .score-cluster {
+      gap: 10px;
+    }
+
+    .team-block {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .team-tag {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
       text-transform: uppercase;
     }
 
-    .player-tag.p1 { color: var(--cyan); text-shadow: 0 0 8px var(--cyan); }
-    .player-tag.p2 { color: var(--magenta); text-shadow: 0 0 8px var(--magenta); }
+    .team-tag.t1 {
+      color: var(--ocean-cyan);
+    }
+
+    .team-tag.t2 {
+      color: var(--sunset-gold);
+    }
 
     .score-num {
       font-family: var(--font-mono);
-      font-size: 20px;
+      font-size: 18px;
       font-weight: 900;
+      min-width: 24px;
+      text-align: center;
       line-height: 1;
+      text-shadow: 0 0 10px rgba(255, 106, 43, 0.45);
     }
 
-    .score-num.p1 { color: #e8ffff; text-shadow: 0 0 10px var(--cyan); }
-    .score-num.p2 { color: #ffe8f7; text-shadow: 0 0 10px var(--magenta); }
+    .heat-track {
+      position: relative;
+      width: 68px;
+      height: 8px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.14);
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .heat-fill {
+      height: 100%;
+      width: 0%;
+      border-radius: 999px;
+      transition: width 90ms linear;
+    }
+
+    #heatBarT1 {
+      background: linear-gradient(90deg, #00c6ff, var(--ocean-cyan));
+    }
+
+    #heatBarT2 {
+      background: linear-gradient(90deg, var(--sunset-coral), var(--sunset-gold));
+    }
+
+    .heat-fill.heat-max {
+      background: linear-gradient(90deg, var(--heat-pink), var(--sunset-coral), var(--sunset-gold)) !important;
+      box-shadow: 0 0 12px var(--sunset-coral);
+    }
 
     .score-divider {
-      font-family: var(--font-mono);
+      color: var(--text-dim);
+      font-weight: 700;
       font-size: 12px;
-      color: rgba(255, 255, 255, 0.45);
     }
 
-    /* Wind Gust Meter */
-    #windMeterPill {
-      display: flex;
-       flex-direction: column;
+    #touchIndicator {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      color: var(--sunset-gold);
+      padding: 2px 7px;
+      border-radius: 999px;
+      background: rgba(255, 179, 71, 0.14);
+      border: 1px solid rgba(255, 179, 71, 0.32);
+    }
+
+    #windReadout {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.03em;
+      color: var(--ocean-cyan);
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: var(--glass-bg);
+      border: 1px solid rgba(56, 232, 255, 0.35);
+      pointer-events: auto;
+      white-space: nowrap;
+    }
+
+    #windReadout.phase-warning {
+      color: var(--sunset-gold);
+      border-color: var(--sunset-gold);
+      background: rgba(255, 179, 71, 0.22);
+    }
+
+    #windReadout.phase-gust {
+      color: #fff;
+      border-color: var(--heat-pink);
+      background: rgba(255, 46, 136, 0.34);
+      box-shadow: 0 0 12px rgba(255, 46, 136, 0.45);
+    }
+
+    /* Interactive HUD Controls */
+    .hud-btn,
+    .hud-select,
+    .hud-link {
+      pointer-events: auto;
+      appearance: none;
+      -webkit-appearance: none;
+      display: inline-flex;
       align-items: center;
       justify-content: center;
-      background: var(--glass-bg);
-      border: 1px solid rgba(255, 0, 170, 0.4);
-      border-radius: 12px;
-      padding: 4px 12px;
-      min-width: 175px;
-      backdrop-filter: blur(8px);
-      box-shadow: 0 0 15px rgba(255, 0, 170, 0.18);
-      transition: border-color 0.2s, box-shadow 0.2s;
-    }
-
-    #windMeterPill.gust-warning {
-      border-color: var(--gold);
-      box-shadow: 0 0 18px rgba(255, 230, 0, 0.55);
-    }
-
-    #windMeterPill.gust-active {
-      border-color: var(--orange);
-      box-shadow: 0 0 22px rgba(255, 85, 0, 0.7);
-    }
-
-    .wind-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      width: 100%;
-      font-family: var(--font-mono);
-      font-size: 10px;
-      font-weight: 700;
-      letter-spacing: 0.06em;
-      margin-bottom: 3px;
-    }
-
-    #windLabel {
-      color: var(--cyan);
-      text-shadow: 0 0 6px var(--cyan);
-    }
-
-    #windValueText {
-      color: #ffffff;
-    }
-
-    .wind-bar-track {
-      position: relative;
-      width: 100%;
-      height: 6px;
-      background: rgba(255, 255, 255, 0.12);
-      border-radius: 99px;
-      overflow: hidden;
-    }
-
-    .wind-bar-center {
-      position: absolute;
-      left: 50%;
-      top: 0;
-      bottom: 0;
-      width: 2px;
-      background: rgba(255, 255, 255, 0.55);
-      transform: translateX(-50%);
-      z-index: 2;
-    }
-
-    #windBarFill {
-      position: absolute;
-      top: 0;
-      bottom: 0;
-      left: 50%;
-      width: 0%;
-      background: linear-gradient(90deg, var(--cyan), var(--magenta));
-      box-shadow: 0 0 8px var(--cyan);
-      transition: width 0.08s linear, left 0.08s linear;
-    }
-
-    /* Input Mode Selector Pill */
-    #modeSelectorPill {
-      display: flex;
-      align-items: center;
-      background: var(--glass-bg);
+      gap: 4px;
+      padding: 4px 8px;
+      border-radius: 7px;
       border: 1px solid var(--glass-border);
-      border-radius: 999px;
+      background: var(--glass-bg);
+      color: var(--text-main);
+      font-family: var(--font-ui);
+      font-size: 11px;
+      font-weight: 700;
+      line-height: 1.2;
+      letter-spacing: 0.02em;
+      text-decoration: none;
+      white-space: nowrap;
+      cursor: pointer;
+      transition: background 120ms ease, border-color 120ms ease, transform 80ms ease;
+    }
+
+    .hud-btn:hover,
+    .hud-select:hover,
+    .hud-link:hover {
+      background: rgba(255, 106, 43, 0.24);
+      border-color: var(--sunset-gold);
+    }
+
+    .hud-btn:active,
+    .hud-link:active {
+      transform: scale(0.97);
+    }
+
+    .hud-btn.active {
+      background: linear-gradient(135deg, var(--sunset-coral), #ff4081);
+      border-color: var(--sunset-gold);
+      color: #fff;
+      box-shadow: 0 0 10px rgba(255, 106, 43, 0.45);
+    }
+
+    .hud-select {
+      padding-right: 18px;
+      background-image: linear-gradient(45deg, transparent 50%, var(--sunset-gold) 50%),
+        linear-gradient(135deg, var(--sunset-gold) 50%, transparent 50%);
+      background-position: calc(100% - 10px) 50%, calc(100% - 5px) 50%;
+      background-size: 5px 5px, 5px 5px;
+      background-repeat: no-repeat;
+    }
+
+    .hud-select option {
+      background: #1b1033;
+      color: var(--text-main);
+    }
+
+    .mode-group {
+      display: inline-flex;
+      align-items: center;
+      gap: 2px;
       padding: 2px;
-      backdrop-filter: blur(8px);
-    }
-
-    .mode-btn {
-      background: transparent;
-      border: none;
-      color: rgba(255, 255, 255, 0.65);
-      font-family: var(--font-mono);
-      font-size: 10px;
-      font-weight: 700;
-      letter-spacing: 0.04em;
-      padding: 5px 9px;
-      border-radius: 999px;
-      cursor: pointer;
-      transition: all 0.15s ease;
-      white-space: nowrap;
-    }
-
-    .mode-btn:hover {
-      color: #ffffff;
-    }
-
-    .mode-btn.active {
-      background: linear-gradient(90deg, rgba(0, 243, 255, 0.28), rgba(255, 0, 170, 0.32));
-      color: #ffffff;
-      border: 1px solid var(--cyan);
-      box-shadow: 0 0 10px rgba(0, 243, 255, 0.45);
-      text-shadow: 0 0 6px var(--cyan);
-    }
-
-    /* HUD Action Buttons (Audio, Bot Assist, Physics Lab) */
-    .hud-btn {
-      background: var(--glass-bg);
+      border-radius: 8px;
+      background: rgba(10, 6, 22, 0.72);
       border: 1px solid var(--glass-border);
-      color: #ffffff;
-      font-family: var(--font-mono);
-      font-size: 10px;
-      font-weight: 700;
-      letter-spacing: 0.05em;
-      padding: 6px 10px;
+      pointer-events: auto;
+    }
+
+    .mode-group .hud-btn {
+      border: none;
+      background: transparent;
+      padding: 3px 7px;
+      border-radius: 6px;
+    }
+
+    .mode-group .hud-btn.active {
+      background: linear-gradient(135deg, #00bcd4, var(--ocean-cyan));
+      color: #0b0818;
+      box-shadow: none;
+    }
+
+    .hud-link {
+      border-color: rgba(56, 232, 255, 0.45);
+      color: var(--ocean-cyan);
+    }
+
+    /* Rally Banner */
+    #rallyBanner {
+      position: fixed;
+      top: 86px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 6px 16px;
       border-radius: 999px;
-      cursor: pointer;
-      backdrop-filter: blur(8px);
-      transition: all 0.15s ease;
+      background: rgba(18, 11, 36, 0.86);
+      border: 1px solid var(--sunset-gold);
+      color: var(--sunset-gold);
+      font-size: 14px;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      text-shadow: 0 0 12px rgba(255, 106, 43, 0.6);
+      pointer-events: none;
+      z-index: 12;
       white-space: nowrap;
-      box-shadow: 0 0 12px rgba(0, 243, 255, 0.15);
     }
 
-    .hud-btn:hover {
-      border-color: var(--cyan);
-      box-shadow: 0 0 14px rgba(0, 243, 255, 0.45);
+    /* Bottom Controls Legend */
+    #controlsHint {
+      position: fixed;
+      bottom: 8px;
+      left: 50%;
+      transform: translateX(-50%);
+      max-width: calc(100vw - 16px);
+      padding: 4px 12px;
+      border-radius: 999px;
+      background: var(--glass-bg);
+      border: 1px solid rgba(255, 179, 71, 0.24);
+      color: var(--text-dim);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      text-align: center;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      pointer-events: none;
+      z-index: 10;
     }
 
-    .hud-btn.active-toggle {
-      border-color: var(--magenta);
-      background: rgba(255, 0, 170, 0.24);
-      box-shadow: 0 0 14px rgba(255, 0, 170, 0.5);
-    }
-
-    /* Translucent Physics Lab Drawer */
+    /* Physics Lab Drawer */
     #physicsDrawer {
       position: fixed;
-      top: 50px;
-      right: 14px;
-      width: 310px;
-      max-height: calc(100vh - 64px);
+      top: 0;
+      right: 0;
+      width: min(320px, 92vw);
+      max-height: 100vh;
+      height: 100vh;
+      display: none;
+      flex-direction: column;
+      gap: 12px;
+      padding: 14px 16px 18px;
+      background: var(--glass-strong);
+      border-left: 1px solid var(--glass-border);
+      box-shadow: -8px 0 28px rgba(0, 0, 0, 0.55);
       overflow-y: auto;
-      background: rgba(10, 4, 24, 0.92);
-      border: 1px solid var(--cyan);
-      border-radius: 14px;
-      padding: 14px 16px;
       z-index: 30;
-      backdrop-filter: blur(14px);
-      box-shadow: 0 0 28px rgba(0, 243, 255, 0.35), inset 0 0 18px rgba(255, 0, 170, 0.15);
-      transform: translateX(350px);
-      opacity: 0;
-      pointer-events: none;
-      transition: transform 0.24s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.2s ease;
     }
 
     #physicsDrawer.open {
-      transform: translateX(0);
-      opacity: 1;
-      pointer-events: auto;
+      display: flex;
     }
 
     .drawer-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      border-bottom: 1px solid rgba(0, 243, 255, 0.25);
+      border-bottom: 1px solid rgba(255, 179, 71, 0.25);
       padding-bottom: 8px;
-      margin-bottom: 10px;
     }
 
     .drawer-title {
-      font-family: var(--font-mono);
-      font-size: 12px;
+      margin: 0;
+      font-size: 15px;
       font-weight: 800;
-      letter-spacing: 0.1em;
-      color: var(--cyan);
-      text-shadow: 0 0 8px var(--cyan);
+      color: var(--sunset-gold);
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
     }
 
-    .drawer-close {
-      background: transparent;
-      border: none;
-      color: rgba(255, 255, 255, 0.7);
-      font-family: var(--font-mono);
-      font-size: 14px;
-      cursor: pointer;
-    }
-
-    .slider-row {
-      margin-bottom: 9px;
-    }
-
-    .slider-label-line {
+    .slider-field {
       display: flex;
-      justify-content: space-between;
-      font-family: var(--font-mono);
-      font-size: 10px;
-      margin-bottom: 3px;
-      color: #e2d9ff;
+      flex-direction: column;
+      gap: 4px;
     }
 
-    .slider-val {
-      color: var(--cyan);
+    .slider-label-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12px;
       font-weight: 700;
     }
 
-    input[type="range"].synth-slider {
-      -webkit-appearance: none;
-      appearance: none;
-      width: 100%;
-      height: 5px;
-      background: rgba(255, 255, 255, 0.16);
-      border-radius: 99px;
-      outline: none;
+    .slider-val {
+      font-family: var(--font-mono);
+      color: var(--ocean-cyan);
     }
 
-    input[type="range"].synth-slider::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      appearance: none;
-      width: 14px;
-      height: 14px;
-      border-radius: 50%;
-      background: var(--cyan);
-      border: 2px solid #ffffff;
-      box-shadow: 0 0 10px var(--cyan);
+    .slider-field input[type="range"] {
+      width: 100%;
+      accent-color: var(--sunset-coral);
       cursor: pointer;
     }
 
     .drawer-actions {
       display: flex;
       gap: 8px;
-      margin-top: 10px;
+      margin-top: 4px;
     }
 
-    .drawer-btn {
+    .drawer-actions .hud-btn {
       flex: 1;
-      background: linear-gradient(90deg, rgba(255, 0, 170, 0.28), rgba(0, 243, 255, 0.28));
-      border: 1px solid var(--magenta);
-      color: #ffffff;
-      font-family: var(--font-mono);
-      font-size: 10px;
-      font-weight: 700;
-      letter-spacing: 0.06em;
-      padding: 7px 10px;
-      border-radius: 8px;
-      cursor: pointer;
-      text-transform: uppercase;
-      transition: all 0.15s ease;
+      padding: 8px 10px;
+      font-size: 12px;
     }
 
-    .drawer-btn:hover {
-      border-color: var(--cyan);
-      box-shadow: 0 0 12px rgba(0, 243, 255, 0.45);
-    }
-
-    /* Bottom Subtle Controls Legend */
-    #controlsHint {
+    /* Quick-Bind Modal */
+    #quickBindModal {
       position: fixed;
-      bottom: 6px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 8;
-      font-family: var(--font-mono);
-      font-size: 10px;
-      letter-spacing: 0.06em;
-      color: rgba(255, 255, 255, 0.62);
-      background: rgba(9, 4, 20, 0.65);
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      padding: 3px 12px;
-      border-radius: 999px;
-      pointer-events: none;
-      white-space: nowrap;
-      backdrop-filter: blur(4px);
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      background: rgba(8, 4, 18, 0.78);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      z-index: 40;
     }
 
-    @media (max-width: 900px) {
+    .modal-card {
+      width: min(380px, 92vw);
+      padding: 18px 20px;
+      border-radius: 14px;
+      background: var(--glass-strong);
+      border: 1px solid var(--sunset-gold);
+      box-shadow: 0 12px 36px rgba(0, 0, 0, 0.6);
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .modal-title {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 900;
+      color: var(--sunset-gold);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    #quickBindPrompt {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    #quickBindCountdown {
+      font-family: var(--font-mono);
+      font-size: 28px;
+      font-weight: 900;
+      color: var(--ocean-cyan);
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+    }
+
+    .modal-actions .hud-btn {
+      flex: 1;
+      padding: 7px 10px;
+      font-size: 12px;
+    }
+
+    /* Portrait Auto-Pause Overlay */
+    #portraitOverlay {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background: linear-gradient(165deg, rgba(18, 11, 36, 0.96), rgba(45, 16, 48, 0.96));
+      z-index: 50;
+      text-align: center;
+    }
+
+    .portrait-card {
+      max-width: 320px;
+      padding: 22px 20px;
+      border-radius: 16px;
+      background: rgba(18, 11, 36, 0.9);
+      border: 1px solid var(--sunset-gold);
+      box-shadow: 0 14px 36px rgba(0, 0, 0, 0.55);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .portrait-icon {
+      font-size: 40px;
+      line-height: 1;
+    }
+
+    .portrait-heading {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 900;
+      color: var(--sunset-gold);
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .portrait-sub {
+      margin: 0;
+      font-size: 13px;
+      color: var(--text-dim);
+      line-height: 1.45;
+    }
+
+    /* Mobile Landscape & Compact Breakpoints (1024px and smaller) */
+    @media (max-width: 1024px), (max-height: 460px) {
       #hudOverlay {
-        padding: 5px 8px;
+        padding: 4px 6px 2px;
+        gap: 3px;
+      }
+
+      .hud-row {
         gap: 4px;
       }
-      .score-card {
+
+      .hud-row-controls {
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 3px;
+      }
+
+      .hud-pill {
+        padding: 2px 7px;
+        gap: 5px;
+      }
+
+      .score-num {
+        font-size: 14px;
+        min-width: 18px;
+      }
+
+      .team-tag {
+        font-size: 9.5px;
+      }
+
+      .heat-track {
+        width: 44px;
+        height: 6px;
+      }
+
+      #touchIndicator,
+      #windReadout {
+        font-size: 9.5px;
+        padding: 2px 6px;
+      }
+
+      .hud-btn,
+      .hud-select,
+      .hud-link {
+        font-size: 9.5px;
+        padding: 2px 5px;
+        border-radius: 5px;
+      }
+
+      .hud-select {
+        padding-right: 14px;
+        background-position: calc(100% - 8px) 50%, calc(100% - 4px) 50%;
+        background-size: 4px 4px, 4px 4px;
+      }
+
+      .mode-group {
+        padding: 1px;
+        gap: 1px;
+      }
+
+      .mode-group .hud-btn {
+        padding: 2px 5px;
+      }
+
+      #rallyBanner {
+        top: 78px;
+        font-size: 11px;
         padding: 3px 10px;
       }
-      .score-num {
-        font-size: 16px;
+
+      #controlsHint {
+        bottom: 4px;
+        font-size: 9.5px;
+        padding: 2px 8px;
       }
-      #windMeterPill {
-        min-width: 135px;
-        padding: 3px 8px;
-      }
-      .mode-btn {
-        font-size: 9px;
-        padding: 4px 6px;
-      }
-      .hud-btn {
-        font-size: 9px;
-        padding: 5px 7px;
+
+      #physicsDrawer {
+        padding: 10px 12px 14px;
+        gap: 8px;
       }
     }
   </style>
 </head>
 <body>
-  <!-- Fullscreen Synthwave Canvas -->
-  <canvas id="gameCanvas"></canvas>
+  <canvas id="gameCanvas" data-testid="game-canvas"></canvas>
 
-  <!-- Synthwave HUD Overlay -->
-  <header id="hudOverlay">
-    <!-- Left Cluster: Scoreboard + Wind Gust Meter -->
-    <div class="hud-cluster">
-      <div class="score-card" title="Neon Beach Scoreboard">
-        <div class="score-side">
-          <span class="player-tag p1">P1</span>
-          <span id="scoreP1" class="score-num p1">0</span>
+  <header id="hudOverlay" aria-label="Summer Heat 3D HUD">
+    <div class="hud-row hud-row-top">
+      <div class="hud-pill score-cluster">
+        <div class="team-block">
+          <span class="team-tag t1">T1</span>
+          <span id="scoreT1" data-testid="score-t1" class="score-num">0</span>
+          <div class="heat-track" aria-label="Team 1 Heat Meter">
+            <div id="heatBarT1" data-testid="heat-bar-t1" class="heat-fill"></div>
+          </div>
         </div>
-        <span class="score-divider">⚡</span>
-        <div class="score-side">
-          <span id="scoreP2" class="score-num p2">0</span>
-          <span class="player-tag p2">P2</span>
+
+        <span id="touchIndicator" data-testid="touch-indicator">T1 · TOUCH 0/3</span>
+
+        <div class="team-block">
+          <div class="heat-track" aria-label="Team 2 Heat Meter">
+            <div id="heatBarT2" data-testid="heat-bar-t2" class="heat-fill"></div>
+          </div>
+          <span id="scoreT2" data-testid="score-t2" class="score-num">0</span>
+          <span class="team-tag t2">T2</span>
         </div>
       </div>
 
-      <div id="windMeterPill">
-        <div class="wind-header">
-          <span id="windLabel">BREEZE</span>
-          <span id="windValueText">+12 px/s</span>
-        </div>
-        <div class="wind-bar-track">
-          <div class="wind-bar-center"></div>
-          <div id="windBarFill"></div>
-        </div>
-      </div>
+      <div id="windReadout" data-testid="wind-readout">WIND → 0.0 m/s · BREEZE</div>
     </div>
 
-    <!-- Center Cluster: Input Mode Selector -->
-    <div class="hud-cluster">
-      <div id="modeSelectorPill" role="group" aria-label="Input Mode Selector">
-        <button type="button" class="mode-btn active" data-mode="1PAD">1-PAD SPLIT</button>
-        <button type="button" class="mode-btn" data-mode="TOUCH">TOUCH AUTO-RUN</button>
-        <button type="button" class="mode-btn" data-mode="2PAD">2-PAD / KEYBOARD</button>
-      </div>
-    </div>
+    <div class="hud-row hud-row-controls">
+      <button id="cameraToggleBtn" data-testid="camera-toggle" class="hud-btn" type="button">Broadcast 3/4</button>
+      <button id="formatToggleBtn" data-testid="format-toggle" class="hud-btn" type="button">1v1</button>
 
-    <!-- Right Cluster: Audio Toggle & Physics Lab Drawer Toggle -->
-    <div class="hud-cluster">
-      <button type="button" id="audioToggleBtn" class="hud-btn">[🔇 SOUND: OFF]</button>
-      <button type="button" id="physicsLabBtn" class="hud-btn" aria-expanded="false">⚙️ Physics Lab</button>
+      <select id="aiStyleSelect" data-testid="ai-style-select" class="hud-select" aria-label="AI Opponent Style">
+        <option value="WIND_LOBBER">Wind Lobber</option>
+        <option value="NET_BLOCKER">Net Blocker</option>
+        <option value="SPIN_SLICER">Spin Slicer</option>
+      </select>
+
+      <div class="mode-group" role="group" aria-label="Input Mode">
+        <button id="mode1PadBtn" data-testid="mode-1pad" data-mode="1PAD" class="hud-btn" type="button" aria-pressed="false">1-PAD</button>
+        <button id="mode2PadBtn" data-testid="mode-2pad" data-mode="2PAD" class="hud-btn active" type="button" aria-pressed="true">2-PAD</button>
+        <button id="modeTouchBtn" data-testid="mode-touch" data-mode="TOUCH" class="hud-btn" type="button" aria-pressed="false">TOUCH</button>
+      </div>
+
+      <button id="quickBindBtn" data-testid="quick-bind-btn" class="hud-btn" type="button">Quick-Bind</button>
+      <button id="audioToggleBtn" data-testid="audio-toggle" class="hud-btn" type="button" aria-pressed="false">[🔇 SOUND: OFF]</button>
+      <button id="physicsLabBtn" data-testid="physics-lab-btn" class="hud-btn" type="button" aria-expanded="false">⚙️ Physics Lab</button>
+      <a id="classic2dBtn" data-testid="classic-2d-link" class="hud-link" href="./classic-2d/index.html">[Play Classic 2D]</a>
+      <button id="resetMatchBtn" data-testid="reset-match-btn" class="hud-btn" type="button">Reset</button>
     </div>
   </header>
 
-  <!-- Live Physics Lab Drawer -->
-  <aside id="physicsDrawer" aria-label="Physics Lab Drawer">
+  <div id="rallyBanner" data-testid="rally-banner" hidden></div>
+
+  <footer id="controlsHint" data-testid="controls-hint">
+    2-PAD / KB: P1 WASD + Space (Strike) + Shift/E (Dive/Pokey/Block) | P2 Arrows + Enter + RShift
+  </footer>
+
+  <aside id="physicsDrawer" data-testid="physics-drawer" aria-label="Physics Lab" aria-hidden="true">
     <div class="drawer-header">
-      <span class="drawer-title">⚙️ HEAVY GALE PHYSICS LAB</span>
-      <button type="button" id="closeDrawerBtn" class="drawer-close" title="Close">✕</button>
+      <h2 class="drawer-title">⚙️ Physics Lab</h2>
+      <button id="closeDrawerBtn" data-testid="close-drawer-btn" class="hud-btn" type="button">✕ Close</button>
     </div>
 
-    <div class="slider-row">
-      <div class="slider-label-line">
-        <span>Gravity (g)</span>
-        <span id="valGravity" class="slider-val">340 px/s²</span>
-      </div>
-      <input type="range" id="sliderGravity" class="synth-slider" min="160" max="600" step="5" value="340" />
-    </div>
+    <label class="slider-field" for="sliderGravity">
+      <span class="slider-label-row">
+        <span>Gravity (m/s²)</span>
+        <span id="valGravity" class="slider-val">11.2</span>
+      </span>
+      <input id="sliderGravity" data-testid="slider-gravity" type="range" min="6" max="18" step="0.2" value="11.2">
+    </label>
 
-    <div class="slider-row">
-      <div class="slider-label-line">
-        <span>Air Drag (k_drag)</span>
-        <span id="valDrag" class="slider-val">0.0036</span>
-      </div>
-      <input type="range" id="sliderDrag" class="synth-slider" min="0.0000" max="0.0090" step="0.0002" value="0.0036" />
-    </div>
+    <label class="slider-field" for="sliderDrag">
+      <span class="slider-label-row">
+        <span>Air Drag (kDrag)</span>
+        <span id="valDrag" class="slider-val">0.032</span>
+      </span>
+      <input id="sliderDrag" data-testid="slider-drag" type="range" min="0" max="0.08" step="0.002" value="0.032">
+    </label>
 
-    <div class="slider-row">
-      <div class="slider-label-line">
-        <span>Magnus Spin (k_magnus)</span>
-        <span id="valMagnus" class="slider-val">0.0060</span>
-      </div>
-      <input type="range" id="sliderMagnus" class="synth-slider" min="0.0000" max="0.0140" step="0.0005" value="0.0060" />
-    </div>
+    <label class="slider-field" for="sliderMagnus">
+      <span class="slider-label-row">
+        <span>Magnus Spin (kMagnus)</span>
+        <span id="valMagnus" class="slider-val">0.028</span>
+      </span>
+      <input id="sliderMagnus" data-testid="slider-magnus" type="range" min="0" max="0.07" step="0.002" value="0.028">
+    </label>
 
-    <div class="slider-row">
-      <div class="slider-label-line">
-        <span>Gust Intensity (Scale)</span>
+    <label class="slider-field" for="sliderGust">
+      <span class="slider-label-row">
+        <span>Heavy Gale Scale</span>
         <span id="valGust" class="slider-val">1.00x</span>
-      </div>
-      <input type="range" id="sliderGust" class="synth-slider" min="0.00" max="2.00" step="0.05" value="1.00" />
-    </div>
+      </span>
+      <input id="sliderGust" data-testid="slider-gust" type="range" min="0" max="2.0" step="0.05" value="1.0">
+    </label>
 
-    <div class="slider-row">
-      <div class="slider-label-line">
+    <label class="slider-field" for="sliderSpeed">
+      <span class="slider-label-row">
         <span>Game Speed</span>
         <span id="valSpeed" class="slider-val">1.00x</span>
-      </div>
-      <input type="range" id="sliderSpeed" class="synth-slider" min="0.50" max="1.60" step="0.05" value="1.00" />
-    </div>
+      </span>
+      <input id="sliderSpeed" data-testid="slider-speed" type="range" min="0.5" max="1.6" step="0.05" value="1.0">
+    </label>
 
     <div class="drawer-actions">
-      <button type="button" id="resetPhysicsBtn" class="drawer-btn">Reset to Heavy Gale</button>
-      <button type="button" id="forceGustBtn" class="drawer-btn">Trigger Gust</button>
+      <button id="resetPhysicsBtn" data-testid="reset-physics-btn" class="hud-btn" type="button">Reset Defaults</button>
+      <button id="forceGustBtn" data-testid="force-gust-btn" class="hud-btn active" type="button">Trigger Gust</button>
     </div>
   </aside>
 
-  <!-- Dynamic Bottom Controls Legend -->
-  <div id="controlsHint">
-    1-PAD SPLIT (Stadia): P1 L-Stick + L1/L2 | P2 R-Stick + R1/R2/A • Keyboard: WASD+Space / Arrows+Enter (Auto-Sparring Active Until Input)
+  <div id="quickBindModal" data-testid="quick-bind-modal" role="dialog" aria-modal="true" aria-labelledby="quickBindTitle" hidden>
+    <div class="modal-card">
+      <h2 id="quickBindTitle" class="modal-title">3-Second Quick-Bind</h2>
+      <div id="quickBindPrompt" data-testid="quick-bind-prompt">Press button or key for P1 Primary...</div>
+      <div id="quickBindCountdown" data-testid="quick-bind-countdown">3.0s</div>
+      <div class="modal-actions">
+        <button id="quickBindCancelBtn" data-testid="quick-bind-cancel" class="hud-btn" type="button">Cancel</button>
+        <button id="quickBindResetBtn" data-testid="quick-bind-reset" class="hud-btn" type="button">Reset Bindings</button>
+      </div>
+    </div>
   </div>
 
-  <script src="./game.js"></script>
-  <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js').catch(() => {});
-      });
-    }
-  </script>
+  <div id="portraitOverlay" data-testid="portrait-overlay" role="alertdialog" aria-modal="true" hidden>
+    <div class="portrait-card">
+      <div class="portrait-icon" aria-hidden="true">📱↻</div>
+      <h2 class="portrait-heading">Rotate to Landscape</h2>
+      <p class="portrait-sub">SUMMER HEAT 3D is auto-paused in portrait mode. Turn your device sideways to resume the rally.</p>
+    </div>
+  </div>
+
+  <script type="module" src="./src/main.js"></script>
 </body>
 </html>

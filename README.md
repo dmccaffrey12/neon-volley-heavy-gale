@@ -1,83 +1,84 @@
-# 🏐 NEON VOLLEY: HEAVY GALE
+# 🏐 SUMMER HEAT 3D (Neon Volley: Heavy Gale)
 
-**A Zero-Dependency, Offline-First 2-Player Synthwave Beach Ball PWA**
+**A Zero-Build, Zero-CDN, Offline-First 3D Arcade Beach Volleyball PWA**
 
-Designed for two players sharing an airplane tray table in 100% offline **Airplane Mode**. Built with vanilla HTML5 `<canvas>`, CSS3, Web Audio API, and modern ES6+ JavaScript—with zero external libraries, fonts, images, or build steps.
+Built with pure browser-native ES2022+ modules, a vendored single-file Three.js (`r170`), procedural Web Audio synthesis, and deterministic 120Hz 3D aerodynamics—designed to play smoothly in **100% offline Airplane Mode** on desktop, mobile, or a shared single-controller tray-table setup. Includes the original 2D game archived under `./classic-2d/` via the in-app **`[Play Classic 2D]`** switcher.
 
 ---
 
 ## ✨ Key Features
 
-### 1. "Heavy Gale" Aerodynamics & 2D Magnus Physics
-Uses Semi-Implicit Euler integration ($\Delta t \le 0.033\text{s}$) with configurable constants initialized to the **Heavy Gale** preset:
-- **Gravity**: $g = 340\text{ px/s}^2$
-- **Quadratic Air Drag**: $k_{\text{drag}} = 0.0036$
-- **2D Magnus Spin Coefficient**: $k_{\text{magnus}} = 0.0060$
-- **Neon Wall & Rounded Net Restitution**: $e_{\text{wall}} = 0.78$, $e_{\text{net}} = 0.72$
-- **Dynamic Wind & Gust Waves**:
-  - Gentle baseline breeze ($\pm 30\text{ px/s}$) interrupted every $8\text{–}12\text{s}$ by a 4-second **Heavy Gale Gust** ($w_x = \pm 85\text{ to }100\text{ px/s}$), preceded by a 1-second visual wind-streak warning.
-- **Per-Frame Drag + Magnus Lift/Dive**:
-  - Relative air velocity: $\vec{v}_{\text{rel}} = (v_x - w_x,\; v_y)$, speed $v_{\text{rel}} = \operatorname{hypot}(v_{\text{rel},x},\; v_{\text{rel},y})$
-  - Angular velocity $\omega \in [-1.5, 1.5]$ ($\omega \gets 0.994\omega$ per frame):
-    $$a_x = -k_{\text{drag}} \cdot v_{\text{rel}} \cdot v_{\text{rel},x} - k_{\text{magnus}} \cdot (\omega \cdot 120) \cdot v_{\text{rel},y}$$
-    $$a_y = g - k_{\text{drag}} \cdot v_{\text{rel}} \cdot v_{\text{rel},y} + k_{\text{magnus}} \cdot (\omega \cdot 120) \cdot v_{\text{rel},x}$$
-  - **Topspin** pulls the ball sharply downward ($+y$) into a dive; **Backspin** generates upward aerodynamic lift ($-y$) so the ball floats and hangs.
+### 1. 120Hz 3D "Heavy Gale" Aerodynamics & Magnus Curve (`src/physics3d.js`)
+Runs on a fixed `FIXED_DT = 1/120` s simulation step in right-handed SI meters (`16 m × 8 m` sand court inside `23 m × 13 m × 14 m` spin-reactive arcade walls):
+- **Oscillating 3D Crosswinds & 4-Second Gale Surges (`windVec3`)**: Dynamic breeze with visual warning phase before 4-second Heavy Gale surges.
+- **Quadratic Air Drag & 3D Magnus Force**:
+  - Relative air velocity: $\vec{v}_{\text{rel}} = \vec{v} - \vec{w}$
+  - Drag: $\vec{a}_{\text{drag}} = -k_{\text{drag}} |\vec{v}_{\text{rel}}| \vec{v}_{\text{rel}}$ (`kDrag = 0.032`)
+  - 3D Magnus curve: $\vec{a}_{\text{magnus}} = k_{\text{magnus}} (\vec{\omega} \times \vec{v}_{\text{rel}})$ (`kMagnus = 0.028`, $|\vec{\omega}| \le 24\text{ rad/s}$) for diving topspin spikes, floating backspin pokeys/cuts, and lateral sidespin hooks.
+- **Spin-Reactive Outer Stadium Arcade Walls & Rounded Net Tape**: Balls remain live off the outer walls and ceiling until sand impact (`y <= 0.22 m`), applying a spin-reactive vertical kick (`kWallSpin * (inwardNormal × omega)`), with anti-tunneling cylindrical net-tape and post deflection (`NET_HEIGHT = 2.38 m`).
+- **180-Step Lookahead Landing Predictor**: Pure non-mutating `predictLandingPoint3D(ballState, windState, physicsConfig)` simulates up to 180 fixed steps (`1.50 s`, plus an analytic ballistic tail for high sky lobs) to drive the pulsing 3D sand landing reticle, AI footwork, and `TOUCH AUTO-FOOTWORK`.
 
-### 2. Glowing Arcade Wall Rebounds (Zero Out-of-Bounds)
-- Left, right, and top screen boundaries act as active neon rebound walls—the ball stays live until it touches the sand floor (`groundY`).
-- **Spin-Wall Kick**: Rebounding off the left or right vertical wall reflects $v_x \gets -v_x \cdot e_{\text{wall}}$ and applies a vertical spin kick:
-  $$v_y \gets v_y + (\text{wallSign} \cdot \omega \cdot 140)$$
-  Topspin drives bank sharply downward toward the sand, while backspin cuts pop high upward for defensive saves.
-- **Rounded Net Capsule**: Center net collisions resolve against a rounded top tape so balls clipping the tape deflect or roll over naturally.
+### 2. True Summer Heat 3-Touch Arcade Loop (`src/rallyEngine.js`)
+Play **1v1** or **2v2** (with an AI partner) against a 3-style Solo AI FSM (**`Wind Lobber`**, **`Net Blocker`**, **`Spin Slicer`**):
+- **Touch 1 — Bump / Dig & Sand Dive**: Pops the ball toward the setter zone and charges the team **`heatMeter`** (`0–100%`).
+- **Touch 2 — Overhead Set**: Lofts the ball near the net and spawns a **shrinking 3D Timing Ring** at the apex.
+- **Touch 3 — Heat Spike / Pokey-Cut vs. Stuff-Block**:
+  - Hitting the sweet spot with a charged meter unleashes a **Heat Spike** (2-frame hit-stop, camera punch, fiery flame spin ribbon, sharp topspin dive).
+  - Read a jumping **Stuff-Blocker** and angle a floating **Backspin Pokey / Cut** (cyan ribbon) over the block.
 
-### 3. 90–120 Step Forward-Simulation Landing Predictor
-- Every frame, the engine clones the active ball state `{ x, y, vx, vy, omega }` and runs a fast-forward simulation loop ($dt = 0.016\text{s}$) through the exact drag, wind, Magnus, net, and spin-wall rebound equations until `simBall.y >= groundY`.
-- Renders a subtle trajectory lookahead arc and a pulsing neon target reticle on the sand at `predictedLandingX`, and drives `TOUCH AUTO-RUN` / AI footwork.
-
-### 4. "Strafe, Charge, & Shape" Strike System + Headwind Guardrail
-- **Magnetized Strike Strafe**: While holding charge, players continue strafing at $65\%$ speed and subtly magnetize toward the ball inside an $85\text{px}$ strike halo.
-- **Charge Ring & Sweet Spot**: Holding strike fills a circular neon ring ($0.0 \to 1.0$ over $0.40\text{s}$). Releasing inside the **Sweet Spot** ($0.70\text{–}0.95$) triggers a 2-frame hit-stop pause, an expanding neon shockwave ring, and $+25\%$ velocity/spin.
-- **Smart Headwind & Distance Guardrail**:
-  $$v_{\text{launch}} = v_{\text{base}} + 0.35 \cdot |x_{\text{player}} - x_{\text{net}}| + 0.85 \cdot \max(0, \text{headwindAgainstShot})$$
-- **Directional Spin Shaping (at release)**:
-  | Input Tilt | Shot Type | Launch Angle | Spin ($\omega$) | Neon Ribbon Color |
-  | :--- | :--- | :---: | :---: | :--- |
-  | **Forward Tilt** | **Topspin Drive** | $28^\circ$ | High Forward Topspin | Orange (`#ff5500`) |
-  | **Back / Down Tilt** | **Backspin Cut** | $44^\circ$ | High Reverse Backspin | Cyan (`#00f3ff`) |
-  | **Upward / Neutral** | **Sky Lob** | $66^\circ$ | Light Backspin | Magenta (`#ff00aa`) |
+### 3. Coastal Sunset 3D Stadium & Articulated IK Athletes (`src/courtScene.js`, `src/playerRigs.js`)
+- Procedural Three.js `r170` coastal sunset stadium with `1024×1024` `PCFSoftShadowMap`, animated ocean waves, swaying palm trees, `windVec3`-driven net-post wind streamers, diegetic stadium LED scoreboard, ball drop-shadow, pulsing 3D landing reticle, shrinking 3D Timing Ring, and fiery/cyan 3D spin ribbons.
+- Toggle live between **`Broadcast 3/4`** and **`2P Split-Screen`** cameras.
+- Hierarchical capsule/sphere 3D athlete rigs with procedural Inverse Kinematics and spring squash-and-stretch across all 7 states: `Idle`, `Sprint`, `UnderhandBump`, `OverheadSet`, `JumpHeatSpike`, `NetBlock`, and `SandDive`.
 
 ---
 
-## 🎮 Multi-Modal Controls (Live HUD Selector)
+## 🎮 Controls & Quick-Bind Calibration (`src/inputManager.js`)
 
-Switch on the fly using the top HUD pill:
+Switch modes live from the HUD:
 1. **`1-PAD SPLIT` (Stadia Single-Controller Mode)**:
-   - **Player 1 (Left Court)**: Left Stick X (`axes[0]`) or D-Pad Left/Right (`buttons[14]`/`[15]`) moves. Hold `L1` (`buttons[4]`) or `L2` (`buttons[6]`) to Charge; Left Stick direction at release shapes the shot.
-   - **Player 2 (Right Court)**: Right Stick X (`axes[2]`) moves. Hold `R1` (`buttons[5]`), `R2` (`buttons[7]`), or `A` (`buttons[0]`) to Charge; Right Stick direction at release shapes the shot.
-2. **`TOUCH AUTO-RUN`**:
-   - Players automatically run toward `predictedLandingX` on their half of the court.
-   - Multi-touch is partitioned by the center net (`touch.identifier` Map): touch and hold on your half to charge, drag thumb to aim/spin, and lift finger to strike.
-3. **`2-PAD / KEYBOARD`**:
-   - **Player 1**: `Gamepad[0]` or `WASD` + `Space`
-   - **Player 2**: `Gamepad[1]` or `Arrow Keys` + `Enter`
-   - *(Note: Any side without recent human input automatically engages smart auto-sparring so solo players can rally immediately).*
+   - **Team 1 (Left Court)**: Left Stick (`axes[0]`/`axes[1]`) or D-Pad moves; `L1`/`L2` (`buttons[4]`/`[6]`) strikes/charges.
+   - **Team 2 (Right Court)**: Right Stick (`axes[2]`/`axes[3]`) moves; `R1`/`R2`/`A` (`buttons[5]`/`[7]`/`[0]`) strikes/charges.
+2. **`2-PAD / KEYBOARD`**:
+   - **Team 1**: `Gamepad[0]` or `WASD` + `Space` (Strike/Jump) + `Shift` (Dive/Block)
+   - **Team 2**: `Gamepad[1]` or `Arrow Keys` + `Enter` (Strike/Jump) + `/` (Dive/Block)
+3. **`TOUCH AUTO-FOOTWORK`**:
+   - Automatic footwork toward the predicted sand landing point; touch-hold, drag to shape spin, and release on your court half to strike.
+4. **3-Second Quick-Bind Modal**: Re-map controller/keyboard bindings in seconds, persisted to isolated v2 `localStorage` (`summer_heat_3d_bindings_v2`).
 
 ---
 
-## ⚙️ Live Physics Lab & Web Audio Synthesizer
-- **Web Audio Synth**: Muted by default (`[🔇 SOUND: OFF]`). Toggling `[🔊 SOUND: ON]` enables procedural `AudioContext` oscillators for synth bass strikes, wall-bounce chimes, charge pitch sweeps, and filtered white-noise wind gusts.
-- **`⚙️ Physics Lab` Drawer**: Live sliders for `Gravity`, `Air Drag`, `Magnus Spin`, `Gust Intensity`, and `Game Speed`, plus `Reset to Heavy Gale` and `Trigger Gust` buttons, persisted automatically to `localStorage`.
+## ⚙️ App Shell, Audio, Physics Lab & Classic 2D (`src/main.js`, `src/audioSynth.js`)
+- **Muted-by-Default Procedural Web Audio**: Ocean surf ambience, Heat Spike bass boom, charge pitch sweeps, and referee whistle (`AudioContext` initializes lazily only after an explicit gesture).
+- **`⚙️ Physics Lab` Drawer**: Live sliders for `Gravity`, `Air Drag`, `Magnus Spin`, `Gust Scale`, and `Game Speed`, plus `Trigger Gust` and `Reset Defaults`, saved to `summer_heat_3d_physics_v2`.
+- **PWA Polish**: Screen Wake Lock (with `visibilitychange` re-acquisition), Portrait Auto-Pause overlay, **`[Play Classic 2D]`** switcher to `./classic-2d/`, and Stale-While-Revalidate Service Worker (`summer-heat-3d-v2`) that pre-caches all 16 app + Classic 2D assets and cleans up legacy v1 caches on activation.
 
 ---
 
-## 🚀 Running Locally & Offline PWA Mode
+## 🚀 Running Locally
 
 ```bash
-# Serve the directory over HTTP
-python -m http.server 8080
+# Serve from the repo root (zero build step required)
+python3 -m http.server 8080
 ```
 
-Then open `http://localhost:8080` in any modern browser. Once loaded, `sw.js` pre-caches `./`, `./index.html`, `./game.js`, and `./manifest.json` so the game works 100% offline.
+Open `http://localhost:8080` in any modern browser. Once loaded, `sw.js` caches the full 3D app and `./classic-2d/` under `summer-heat-3d-v2` for offline play.
+
+---
+
+## 🧪 Running Verification & Tests
+
+```bash
+# 1. ESM syntax checks (Node 22+)
+for f in src/*.js; do node --input-type=module --check < "$f" || exit 1; done
+node --check sw.js && node --check classic-2d/game.js
+
+# 2. Unit tests (94 tests)
+node --test tests/unit/*.test.mjs
+
+# 3. Full 5-tier E2E & Playwright/SwiftShader Browser/Offline QA suite (107 tests)
+bash tests/e2e/run_all.sh
+```
 
 ---
 
@@ -85,9 +86,23 @@ Then open `http://localhost:8080` in any modern browser. Once loaded, `sw.js` pr
 
 ```text
 neon-volley-heavy-gale/
-├── index.html      # Fullscreen landscape viewport, Synthwave HUD & Physics Lab drawer
-├── game.js         # 60 FPS aerodynamic + 2D Magnus solver, 90-step predictor, renderer & synth audio
-├── sw.js           # Cache-first Service Worker for 100% offline Airplane Mode operation
-├── manifest.json   # Fullscreen landscape PWA configuration
-└── README.md       # Documentation & physics reference
+├── index.html                  # Fullscreen 3D viewport, responsive HUD, Physics Lab & Quick-Bind modal
+├── manifest.json               # Fullscreen landscape PWA manifest (preserved v1 inline SVG icon)
+├── sw.js                       # Stale-While-Revalidate Service Worker (summer-heat-3d-v2)
+├── vendor/
+│   └── three.module.min.js     # Vendored offline Three.js r170 single-file ESM bundle
+├── src/
+│   ├── contracts.js            # Deep-frozen shared constants, state factories & sanitizers
+│   ├── physics3d.js            # 120Hz 3D Heavy Gale, Magnus, walls, net & 180-step predictor
+│   ├── playerRigs.js           # Articulated 3D IK athlete rigs (7 animation states)
+│   ├── courtScene.js           # Sunset stadium, waves, palms, reticle, spin ribbon & dual cameras
+│   ├── rallyEngine.js          # 3-touch loop (1v1/2v2), Heat Spike, Timing Ring & 3-style AI FSM
+│   ├── inputManager.js         # 1-PAD SPLIT Stadia, 2-PAD/Keyboard, Touch Auto-Footwork & Quick-Bind
+│   ├── audioSynth.js           # Muted-by-default procedural Web Audio synthesizer
+│   └── main.js                 # App shell wiring, HUD, Physics Lab, Wake Lock & Portrait Auto-Pause
+├── classic-2d/                 # Archived v1 2D Neon Volley (accessible via [Play Classic 2D])
+├── tests/
+│   ├── unit/                   # Node 22 unit test suites (contracts, physics, visuals, gameplay, appshell)
+│   └── e2e/                    # Tiers 1–5 E2E & Playwright WebGL2/SW offline QA suite
+└── AGENTS.md                   # Engineering invariants & module dependency rules
 ```
