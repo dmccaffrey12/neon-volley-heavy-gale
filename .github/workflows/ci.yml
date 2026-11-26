@@ -38,7 +38,8 @@ jobs:
           python3 -m json.tool classic-2d/manifest.json > /dev/null
 
       - name: Run zero-config ESLint
-        run: npx --yes eslint --no-config-lookup --rule 'no-undef: off' src/*.js sw.js
+        run: |
+          npx --yes eslint --no-config-lookup --rule 'no-undef: off' src/*.js sw.js
 
       - name: Run Unit Tests
         run: node --test tests/unit/*.test.mjs
